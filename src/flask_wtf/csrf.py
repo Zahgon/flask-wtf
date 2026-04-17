@@ -139,8 +139,7 @@ def _get_config(
 
 
 class _FlaskFormCSRF(CSRF):
-
-
+    pass
 
 
 class CSRFProtect:
@@ -164,9 +163,6 @@ class CSRFProtect:
 
         if app:
             self.init_app(app)
-
-
-
 
     def exempt(self, view):
         """Mark a view or blueprint to be excluded from CSRF protection.
@@ -199,5 +195,3 @@ class CSRFError(BadRequest):
     """
 
     description = "CSRF validation failed."
-
-

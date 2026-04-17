@@ -15,7 +15,7 @@ def _get_translations():
 
 
 class Translations:
-
+    pass
 
 
 translations = Translations()
