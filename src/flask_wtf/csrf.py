@@ -139,30 +139,8 @@ def _get_config(
 
 
 class _FlaskFormCSRF(CSRF):
-    def setup_form(self, form):
-        self.meta = form.meta
-        return super().setup_form(form)
 
-    def generate_csrf_token(self, csrf_token_field):
-        return generate_csrf(
-            secret_key=self.meta.csrf_secret, token_key=self.meta.csrf_field_name
-        )
 
-    def validate_csrf_token(self, form, field):
-        if g.get("csrf_valid", False):
-            # already validated by CSRFProtect
-            return
-
-        try:
-            validate_csrf(
-                field.data,
-                self.meta.csrf_secret,
-                self.meta.csrf_time_limit,
-                self.meta.csrf_field_name,
-            )
-        except ValidationError as e:
-            logger.info(e.args[0])
-            raise
 
 
 class CSRFProtect:
@@ -187,92 +165,8 @@ class CSRFProtect:
         if app:
             self.init_app(app)
 
-    def init_app(self, app):
-        app.extensions["csrf"] = self
 
-        app.config.setdefault("WTF_CSRF_ENABLED", True)
-        app.config.setdefault("WTF_CSRF_CHECK_DEFAULT", True)
-        app.config["WTF_CSRF_METHODS"] = set(
-            app.config.get("WTF_CSRF_METHODS", ["POST", "PUT", "PATCH", "DELETE"])
-        )
-        app.config.setdefault("WTF_CSRF_FIELD_NAME", "csrf_token")
-        app.config.setdefault("WTF_CSRF_HEADERS", ["X-CSRFToken", "X-CSRF-Token"])
-        app.config.setdefault("WTF_CSRF_TIME_LIMIT", 3600)
-        app.config.setdefault("WTF_CSRF_SSL_STRICT", True)
 
-        app.jinja_env.globals["csrf_token"] = generate_csrf
-        app.context_processor(lambda: {"csrf_token": generate_csrf})
-
-        @app.before_request
-        def csrf_protect():
-            if not app.config["WTF_CSRF_ENABLED"]:
-                return
-
-            if not app.config["WTF_CSRF_CHECK_DEFAULT"]:
-                return
-
-            if request.method not in app.config["WTF_CSRF_METHODS"]:
-                return
-
-            if not request.endpoint:
-                return
-
-            if app.blueprints.get(request.blueprint) in self._exempt_blueprints:
-                return
-
-            view = app.view_functions.get(request.endpoint)
-            dest = f"{view.__module__}.{view.__name__}"
-
-            if dest in self._exempt_views:
-                return
-
-            self.protect()
-
-    def _get_csrf_token(self):
-        # find the token in the form data
-        field_name = current_app.config["WTF_CSRF_FIELD_NAME"]
-        base_token = request.form.get(field_name)
-
-        if base_token:
-            return base_token
-
-        # if the form has a prefix, the name will be {prefix}-csrf_token
-        for key in request.form:
-            if key.endswith(field_name):
-                csrf_token = request.form[key]
-
-                if csrf_token:
-                    return csrf_token
-
-        # find the token in the headers
-        for header_name in current_app.config["WTF_CSRF_HEADERS"]:
-            csrf_token = request.headers.get(header_name)
-
-            if csrf_token:
-                return csrf_token
-
-        return None
-
-    def protect(self):
-        if request.method not in current_app.config["WTF_CSRF_METHODS"]:
-            return
-
-        try:
-            validate_csrf(self._get_csrf_token())
-        except ValidationError as e:
-            logger.info(e.args[0])
-            self._error_response(e.args[0])
-
-        if request.is_secure and current_app.config["WTF_CSRF_SSL_STRICT"]:
-            if not request.referrer:
-                self._error_response("The referrer header is missing.")
-
-            good_referrer = f"https://{request.host}/"
-
-            if not same_origin(request.referrer, good_referrer):
-                self._error_response("The referrer does not match the host.")
-
-        g.csrf_valid = True  # mark this request as CSRF valid
 
     def exempt(self, view):
         """Mark a view or blueprint to be excluded from CSRF protection.
@@ -290,18 +184,7 @@ class CSRFProtect:
             csrf.exempt(bp)
 
         """
-
-        if isinstance(view, Blueprint):
-            self._exempt_blueprints.add(view)
-            return view
-
-        if isinstance(view, str):
-            view_location = view
-        else:
-            view_location = ".".join((view.__module__, view.__name__))
-
-        self._exempt_views.add(view_location)
-        return view
+        pass
 
     def _error_response(self, reason):
         raise CSRFError(reason)
@@ -318,12 +201,3 @@ class CSRFError(BadRequest):
     description = "CSRF validation failed."
 
 
-def same_origin(current_uri, compare_uri):
-    current = urlparse(current_uri)
-    compare = urlparse(compare_uri)
-
-    return (
-        current.scheme == compare.scheme
-        and current.hostname == compare.hostname
-        and current.port == compare.port
-    )

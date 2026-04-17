@@ -45,31 +45,4 @@ class Recaptcha:
 
     def _validate_recaptcha(self, response, remote_addr):
         """Performs the actual validation."""
-        try:
-            private_key = current_app.config["RECAPTCHA_PRIVATE_KEY"]
-        except KeyError:
-            raise RuntimeError("No RECAPTCHA_PRIVATE_KEY config set") from None
-
-        verify_server = current_app.config.get("RECAPTCHA_VERIFY_SERVER")
-        if not verify_server:
-            verify_server = RECAPTCHA_VERIFY_SERVER_DEFAULT
-
-        data = urlencode(
-            {"secret": private_key, "remoteip": remote_addr, "response": response}
-        )
-
-        http_response = http.urlopen(verify_server, data.encode("utf-8"))
-
-        if http_response.code != 200:
-            return False
-
-        json_resp = json.loads(http_response.read())
-
-        if json_resp["success"]:
-            return True
-
-        for error in json_resp.get("error-codes", []):
-            if error in RECAPTCHA_ERROR_CODES:
-                raise ValidationError(RECAPTCHA_ERROR_CODES[error])
-
-        return False
+        pass

@@ -33,41 +33,11 @@ class FlaskForm(Form):
         csrf_class = _FlaskFormCSRF
         csrf_context = session  # not used, provided for custom csrf_class
 
-        @cached_property
-        def csrf(self):
-            return current_app.config.get("WTF_CSRF_ENABLED", True)
 
-        @cached_property
-        def csrf_secret(self):
-            return current_app.config.get("WTF_CSRF_SECRET_KEY", current_app.secret_key)
 
-        @cached_property
-        def csrf_field_name(self):
-            return current_app.config.get("WTF_CSRF_FIELD_NAME", "csrf_token")
 
-        @cached_property
-        def csrf_time_limit(self):
-            return current_app.config.get("WTF_CSRF_TIME_LIMIT", 3600)
 
-        def wrap_formdata(self, form, formdata):
-            if formdata is _Auto:
-                if _is_submitted():
-                    if request.files:
-                        return CombinedMultiDict((request.files, request.form))
-                    elif request.form:
-                        return request.form
-                    elif request.is_json:
-                        return ImmutableMultiDict(request.get_json())
 
-                return None
-
-            return formdata
-
-        def get_translations(self, form):
-            if not current_app.config.get("WTF_I18N_ENABLED", True):
-                return super().get_translations(form)
-
-            return translations
 
     def __init__(self, formdata=_Auto, **kwargs):
         super().__init__(formdata=formdata, **kwargs)
@@ -76,14 +46,13 @@ class FlaskForm(Form):
         """Consider the form submitted if there is an active request and
         the method is ``POST``, ``PUT``, ``PATCH``, or ``DELETE``.
         """
-
-        return _is_submitted()
+        pass
 
     def validate_on_submit(self, extra_validators=None):
         """Call :meth:`validate` only if the form is submitted.
         This is a shortcut for ``form.is_submitted() and form.validate()``.
         """
-        return self.is_submitted() and self.validate(extra_validators=extra_validators)
+        pass
 
     def hidden_tag(self, *fields):
         """Render the form's hidden fields in one call.
@@ -105,23 +74,11 @@ class FlaskForm(Form):
            Skip passed fields that aren't hidden.
            Skip passed names that don't exist.
         """
-
-        def hidden_fields(fields):
-            for f in fields:
-                if isinstance(f, str):
-                    f = getattr(self, f, None)
-
-                if f is None or not isinstance(f.widget, HiddenInput):
-                    continue
-
-                yield f
-
-        return Markup("\n".join(str(f) for f in hidden_fields(fields or self)))
+        pass
 
 
 def _is_submitted():
     """Consider the form submitted if there is an active request and
     the method is ``POST``, ``PUT``, ``PATCH``, or ``DELETE``.
     """
-
-    return bool(request) and request.method in SUBMIT_METHODS
+    pass

@@ -13,14 +13,6 @@ from wtforms.validators import ValidationError
 class FileField(_FileField):
     """Werkzeug-aware subclass of :class:`wtforms.fields.FileField`."""
 
-    def process_formdata(self, valuelist):
-        valuelist = (x for x in valuelist if isinstance(x, FileStorage) and x)
-        data = next(valuelist, None)
-
-        if data is not None:
-            self.data = data
-        else:
-            self.raw_data = ()
 
 
 class MultipleFileField(_MultipleFileField):
@@ -29,14 +21,6 @@ class MultipleFileField(_MultipleFileField):
     .. versionadded:: 1.2.0
     """
 
-    def process_formdata(self, valuelist):
-        valuelist = (x for x in valuelist if isinstance(x, FileStorage) and x)
-        data = list(valuelist) or None
-
-        if data is not None:
-            self.data = data
-        else:
-            self.raw_data = ()
 
 
 class FileRequired(DataRequired):
